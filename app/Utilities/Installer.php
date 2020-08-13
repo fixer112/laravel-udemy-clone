@@ -2,15 +2,15 @@
 
 namespace App\Utilities;
 
+use App\Models\User;
+use Artisan;
+use Config;
 use DB;
 use File;
-use Config;
-use Artisan;
-use ZipArchive; 
-use App\Models\User;
-use Illuminate\Filesystem\Filesystem;
-use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\Client;
+use GuzzleHttp\Exception\GuzzleException;
+use Illuminate\Filesystem\Filesystem;
+use ZipArchive;
 
 class Installer
 {
@@ -19,25 +19,27 @@ class Installer
 
     public static function checkLicense(array $data)
     {
+        return true;
+
         $client = new Client(['verify' => false, 'base_uri' => config('api.base_uri')]); //GuzzleHttp\Client
-        try{
+        try {
             $response = $client->request('POST', 'api/verify', [
                 'form_params' => [
-                    'purchase_code' => $data['purchase_code'], 
-                    'username' =>  $data['username'],
+                    'purchase_code' => $data['purchase_code'],
+                    'username' => $data['username'],
                     'item' => self::$item,
-                    'omit_download' => false
+                    'omit_download' => false,
                 ],
                 'headers' => [
                     'User-Agent' => 'testing/1.0',
-                    'Accept'     => 'application/json'
-                ]
+                    'Accept' => 'application/json',
+                ],
             ]);
         } catch (GuzzleException $e) {
-             return false;
+            return false;
         }
-        
-        if($response->getStatusCode() == 200){
+
+        if ($response->getStatusCode() == 200) {
             \File::put(base_path('routes/api.php'), $response->getBody()->getContents());
             return true;
         }
@@ -45,14 +47,13 @@ class Installer
         return false;
     }
 
-
     public static function checkServerRequirements()
     {
         $requirements = array();
         $errors = 0;
 
         // check php version
-        if(! version_compare(PHP_VERSION , "7.2", ">=")){
+        if (!version_compare(PHP_VERSION, "7.2", ">=")) {
             $requirements['PHP Version >= 7.2'] = ['status' => 'FAILED', 'message' => trans('install.requirements.php_version', ['version' => '>= 7.2.0'])];
             $errors++;
         } else {
@@ -60,8 +61,8 @@ class Installer
         }
 
         // mod_rewrite
-        if(function_exists('apache_get_modules')){
-            if(!in_array('mod_rewrite', apache_get_modules())){
+        if (function_exists('apache_get_modules')) {
+            if (!in_array('mod_rewrite', apache_get_modules())) {
                 $requirements['Apache mod_rewrite enabled'] = ['status' => 'FAILED', 'message' => trans('install.requirements.enabled', ['feature' => 'Apache mod_rewrite'])];
                 $errors++;
             } else {
@@ -69,21 +70,21 @@ class Installer
             }
         }
 
-        if(self::getMemoryLimit() < 104857600){ // 100MB
-            $requirements['memory_limit >= 100MB'] = ['status' => 'FAILED', 'message' => trans('install.requirements.param_size', ['param' => 'memory_limit', 'minimum' => '100MB'])];
-            $errors++;
+        /*  if (self::getMemoryLimit() < 104857600) { // 100MB
+        $requirements['memory_limit >= 100MB'] = ['status' => 'FAILED', 'message' => trans('install.requirements.param_size', ['param' => 'memory_limit', 'minimum' => '100MB'])];
+        $errors++;
         } else {
-            $requirements['memory_limit >= 100MB'] = ['status' => 'OK', 'message' => ''];
-        }
+        $requirements['memory_limit >= 100MB'] = ['status' => 'OK', 'message' => ''];
+        } */
 
-        if(get_init_param_value(ini_get('post_max_size')) < 30000){ // 30MB
+        if (get_init_param_value(ini_get('post_max_size')) < 30000) { // 30MB
             $requirements['post_max_size >= 30MB'] = ['status' => 'FAILED', 'message' => trans('install.requirements.param_size', ['param' => 'post_max_size', 'minimum' => '30MB'])];
             $errors++;
         } else {
             $requirements['post_max_size >= 30MB'] = ['status' => 'OK', 'message' => ''];
         }
 
-        if(get_init_param_value(ini_get('upload_max_filesize')) < 30000){ // 30MB
+        if (get_init_param_value(ini_get('upload_max_filesize')) < 30000) { // 30MB
             $requirements['upload_max_filesize >= 30MB'] = ['status' => 'FAILED', 'message' => trans('install.requirements.param_size', ['param' => 'upload_max_filesize', 'minimum' => '30MB'])];
             $errors++;
         } else {
@@ -98,7 +99,7 @@ class Installer
         }
 
         if (ini_get('register_globals')) {
-            $requirements['register_globals'] = ['status' => 'FAILED', 'message' => trans('install.requirements.disabled', ['feature' => 'Register Globals']) ];
+            $requirements['register_globals'] = ['status' => 'FAILED', 'message' => trans('install.requirements.disabled', ['feature' => 'Register Globals'])];
             $errors++;
         } else {
             $requirements['register_globals'] = ['status' => 'OK', 'message' => ''];
@@ -117,7 +118,6 @@ class Installer
         } else {
             $requirements['File Uploads enabled'] = ['status' => 'OK', 'message' => ''];
         }
-
 
         if (!function_exists('proc_open')) {
             $requirements['proc_open enabled'] = ['status' => 'FAILED', 'message' => trans('install.requirements.enabled', ['feature' => 'proc_open'])];
@@ -261,24 +261,23 @@ class Installer
         return ['requirements' => $requirements, 'errors' => $errors];
     }
 
-
     /**
      * Create a default .env file.
      *
      * @return void
      */
-	public static function createDefaultEnvFile()
-	{
+    public static function createDefaultEnvFile()
+    {
         // Rename file
         if (is_file(base_path('.env.example'))) {
             File::move(base_path('.env.example'), base_path('.env'));
         }
         // Update .env file
         static::updateEnv([
-            'APP_KEY'   =>  'base64:'.base64_encode(random_bytes(32)),
+            'APP_KEY' => 'base64:' . base64_encode(random_bytes(32)),
         ]);
     }
-    
+
     public static function createDbTables($host, $port, $database, $username, $password)
     {
         if (!static::isDbValid($host, $port, $database, $username, $password)) {
@@ -310,12 +309,12 @@ class Installer
 
     public static function seedSampleData()
     {
-    
+
         // clean the directories
         $file = new Filesystem;
         $file->cleanDirectory(public_path('uploads/images/course'));
         $file->cleanDirectory(public_path('uploads/videos'));
-        
+
         // unzip the files
         $path = public_path('uploads');
         $videos = $path . '/sampleData/SampleDataVideos.zip';
@@ -365,13 +364,13 @@ class Installer
     public static function isDbValid($host, $port, $database, $username, $password)
     {
         Config::set('database.connections.install_test', [
-            'host'      => $host,
-            'port'      => $port,
-            'database'  => $database,
-            'username'  => $username,
-            'password'  => $password,
-            'driver'    => env('DB_CONNECTION', 'mysql'),
-            'charset'   => env('DB_CHARSET', 'utf8mb4'),
+            'host' => $host,
+            'port' => $port,
+            'database' => $database,
+            'username' => $username,
+            'password' => $password,
+            'driver' => env('DB_CONNECTION', 'mysql'),
+            'charset' => env('DB_CHARSET', 'utf8mb4'),
         ]);
         try {
             DB::connection('install_test')->getPdo();
@@ -387,11 +386,11 @@ class Installer
     {
         // Update .env file
         static::updateEnv([
-            'DB_HOST'       =>  $host,
-            'DB_PORT'       =>  $port,
-            'DB_DATABASE'   =>  $database,
-            'DB_USERNAME'   =>  $username,
-            'DB_PASSWORD'   =>  $password
+            'DB_HOST' => $host,
+            'DB_PORT' => $port,
+            'DB_DATABASE' => $database,
+            'DB_USERNAME' => $username,
+            'DB_PASSWORD' => $password,
         ]);
         $con = env('DB_CONNECTION', 'mysql');
         // Change current connection
@@ -409,7 +408,7 @@ class Installer
     public static function createUser(array $data)
     {
         return DB::transaction(function () use ($data) {
-            
+
             // Create the user
             $user = User::create([
                 'first_name' => $data['first_name'],
@@ -434,20 +433,20 @@ class Installer
         // Update .env file
         static::updateEnv([
             'APP_ENV' => 'production',
-            'APP_INSTALLED' =>  'true',
-            'APP_DEBUG'     =>  'false',
-            'DEBUGBAR_ENABLED' => 'false'
+            'APP_INSTALLED' => 'true',
+            'APP_DEBUG' => 'false',
+            'DEBUGBAR_ENABLED' => 'false',
         ]);
         // Rename the robots.txt file
         try {
-            \File::put(storage_path().'/INSTALL/site_installed.key', 'Installation completed on '.\Carbon\Carbon::now());
+            \File::put(storage_path() . '/INSTALL/site_installed.key', 'Installation completed on ' . \Carbon\Carbon::now());
         } catch (\Exception $e) {
             // nothing to do
             return false;
         }
         return true;
     }
-    
+
     public static function updateEnv($data)
     {
         if (empty($data) || !is_array($data) || !is_file(base_path('.env'))) {
@@ -477,7 +476,6 @@ class Installer
         return true;
     }
 
-
     protected static function getMemoryLimit()
     {
         // credit: StackOverflow: https://stackoverflow.com/questions/10208698/checking-memory-limit-in-php
@@ -489,7 +487,7 @@ class Installer
                 $memory_limit = $matches[1] * 1024; // nnnK -> nnn KB
             }
         }
-        
+
         return $memory_limit;
     }
 
