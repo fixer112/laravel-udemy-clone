@@ -15,9 +15,8 @@ class AdminUserTableSeeder extends Seeder
         \DB::table('users')->delete();
         \DB::table('model_has_roles')->delete();
 
-        \DB::table('users')->insert(array (
-            0 => 
-            array (
+        \DB::table('users')->insert(array(
+            0 => array(
                 'id' => 1,
                 'uuid' => 'e0fd7870-c538-466a-8610-a427d8f72dbe',
                 'first_name' => 'Admin',
@@ -25,9 +24,9 @@ class AdminUserTableSeeder extends Seeder
                 'username' => 'admin',
                 'email' => 'admin@admin.com',
                 'avatar_type' => 'gravatar',
-                'avatar_location' => NULL,
-                'password' => '$2y$10$DnggYXvrKfsjwgNapsB2SOwFqwF1d3MN/LHxcePX3yAfTXTQ1FK9q',
-                'password_changed_at' => NULL,
+                'avatar_location' => null,
+                'password' => bcrypt('admin'),
+                'password_changed_at' => null,
                 'active' => 1,
                 'confirmation_code' => '76f09724471f6851cbd93743e050ab18',
                 'confirmed' => 1,
@@ -45,26 +44,23 @@ Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nam ut semper lectus. N
                 'linkedin' => '#',
                 'facebook' => '#',
                 'twitter' => '#',
-                'youtube' => NULL,
-                'github' => NULL,
-                'remember_token' => NULL,
+                'youtube' => null,
+                'github' => null,
+                'remember_token' => null,
                 'created_at' => '2019-09-26 21:36:33',
                 'updated_at' => '2019-09-26 22:02:34',
-                'deleted_at' => NULL,
-                'settings' => NULL,
-            )
+                'deleted_at' => null,
+                'settings' => null,
+            ),
         ));
 
-
-        \DB::table('model_has_roles')->insert(array (
-            0 => 
-            array (
+        \DB::table('model_has_roles')->insert(array(
+            0 => array(
                 'role_id' => 1,
                 'model_type' => 'App\\Models\\User',
                 'model_id' => 1,
-            )
-        ));   
-        
-        
+            ),
+        ));
+
     }
 }
